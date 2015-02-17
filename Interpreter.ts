@@ -164,8 +164,8 @@ module Agi {
                 for (var j = 0; j < this.gameObjects.length; j++) {
                     var obj = this.gameObjects[j];
                     if (obj != null) {
-                        if (obj.draw)
-                            this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
+                        //if (obj.draw)
+                        //    this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
                         if (obj.update)
                             this.updateObject(obj, j);
                         if (obj.draw)
@@ -344,18 +344,18 @@ module Agi {
         }
 
         bltFrame() {
-            /*var data = this.frameData.data;
-            for (var k = 0; k < Bitmap.width * Bitmap.height; k++) {
-                var rgb = Agi.palette[this.framePriorityData.data[k]];
-                data[k * 8 + 0] = (rgb >>> 16) & 0xFF;
-                data[k * 8 + 1] = (rgb >>> 8) & 0xFF;
-                data[k * 8 + 2] = rgb & 0xFF;
-                data[k * 8 + 3] = 255;
-                data[k * 8 + 4] = (rgb >>> 16) & 0xFF;
-                data[k * 8 + 5] = (rgb >>> 8) & 0xFF;
-                data[k * 8 + 6] = rgb & 0xFF;
-                data[k * 8 + 7] = 255;
-            }*/
+            //var data = this.frameData.data;
+            //for (var k = 0; k < Bitmap.width * Bitmap.height; k++) {
+            //    var rgb = Agi.palette[this.framePriorityData.data[k]];
+            //    data[k * 8 + 0] = (rgb >>> 16) & 0xFF;
+            //    data[k * 8 + 1] = (rgb >>> 8) & 0xFF;
+            //    data[k * 8 + 2] = rgb & 0xFF;
+            //    data[k * 8 + 3] = 255;
+            //    data[k * 8 + 4] = (rgb >>> 16) & 0xFF;
+            //    data[k * 8 + 5] = (rgb >>> 8) & 0xFF;
+            //    data[k * 8 + 6] = rgb & 0xFF;
+            //    data[k * 8 + 7] = 255;
+            //}
             this.context.putImageData(this.frameData, 0, 0);
         }
 
@@ -830,7 +830,7 @@ module Agi {
         }
 
         agi_number_of_loops(objNo: number, varNo: number) {
-            throw "Not implemented";
+            this.variables[varNo] = this.loadedViews[this.gameObjects[objNo].viewNo].loops.length;
         }
 
         agi_release_priority(objNo: number) {
@@ -944,6 +944,8 @@ module Agi {
             var obj: GameObject = this.gameObjects[objNo];
             obj.draw = false;
             this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
+            obj.loop = 0;
+            obj.cel = 0;
         }
 
         agi_load_logic(logNo: number) {
