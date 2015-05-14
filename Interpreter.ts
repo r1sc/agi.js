@@ -80,6 +80,7 @@ module Agi {
                 this.gameObjects[j] = new GameObject();
             }
             this.agi_load_logic(0);
+
             this.cycle();
         }
 
@@ -168,6 +169,7 @@ module Agi {
                         if (obj.draw) {
                             this.drawObject(obj, j);
                         }
+
                     }
                 }
 
@@ -360,7 +362,6 @@ module Agi {
         updateObject(obj: GameObject, no: number) {
             obj.oldX = obj.x;
             obj.oldY = obj.y;
-
             var xStep: number = obj.stepSize;
             var yStep: number = obj.stepSize;
             switch (obj.movementFlag) {
@@ -842,7 +843,7 @@ module Agi {
         }
 
         agi_number_of_loops(objNo: number, varNo: number) {
-            this.variables[varNo] = this.gameObjects[objNo].viewNo;
+            this.variables[varNo] = this.loadedViews[this.gameObjects[objNo].viewNo].loops.length;
         }
 
         agi_release_priority(objNo: number) {
@@ -956,6 +957,8 @@ module Agi {
             var obj: GameObject = this.gameObjects[objNo];
             obj.draw = false;
             this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
+            obj.loop = 0;
+            obj.cel = 0;
         }
 
         agi_load_logic(logNo: number) {
@@ -1099,6 +1102,9 @@ module Agi {
 
         }
 
+        agi_set_scan_start(offset: number) {
+            this.loadedLogics[this.logicNo].scanStart = offset;
+        }
         /* Tests */
         agi_test_equaln(varNo: number, val: number): boolean {
             return this.variables[varNo] == val;
