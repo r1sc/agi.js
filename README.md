@@ -9,6 +9,8 @@ Jeff Stephenson and Chris Iden and quickly became the cornerstone on which many 
 early titles would be based. AGI was built around the concept of a virtual machine that made 
 it fairly easy for Sierra to port their games to multiple platforms.
 
+![Space Quest II start screen](screenshots/sc1.png)
+
 The virtual machine was based around an in-house developed C-like programming language called "Logic".
 When the programmer compiled a Logic file, the compiler produced an 8-bit "opcode" for each statement.
 In the interpreter, each opcode was defined in a jump table which simply pointed to an assembler
@@ -23,17 +25,13 @@ finally blitted to the screen. This is interesting because this theoretically al
 the images to any resolution. It's also interesting from an artistic perspective as it allows us to 
 trace how the artist originally drawed the pictures, command by command. 
 
+![Space Quest II start screen](screenshots/sc2.gif)
+
 Another interesting feature of the engine was its ability render a room with a pseudo-perspective.
 The engine basically divided the screen into 15 sections, called priority bands. This was basically a
 kind of low-resolution Z-buffer. All background drawing commands were drawn both with a visual color
 and a priority value, so everytime the engine had to draw an animated object, each of its pixels were
 compared against the backgrounds pixel's priority value to decide if the pixel was to be drawn or not.
-
-## Screenshots
-
-![Space Quest II start screen](screenshots/sc1.png)
-![Space Quest II start screen](screenshots/sc2.gif)
-![Space Quest II text rendering](screenshots/sc3.png)
 
 ## Implementation
 
@@ -49,6 +47,8 @@ yet (sounds, dictionary etc.).
 The logic parser seems to be working well acording to my tests. The system mainly needs work on the 
 interpreter; the main issue being that some details are missing from the specs defined above and need
 slight reverse engineering.
+
+![Space Quest II text rendering](screenshots/sc3.png)
 
 ## Contribution
 
