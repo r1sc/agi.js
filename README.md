@@ -1,5 +1,5 @@
 # agi.js
-Adventure Game Interpreter for Sierra's classic 80's adventure games written in TypeScript
+Adventure Game Interpreter for Sierra's classic 80's adventure games written in TypeScript.
 
 ## Background
 
@@ -28,10 +28,11 @@ trace how the artist originally drawed the pictures, command by command.
 ![Space Quest II start screen](screenshots/sc2.gif)
 
 Another interesting feature of the engine was its ability render a room with a pseudo-perspective.
-The engine basically divided the screen into 15 sections, called priority bands. This was basically a
+The engine divided the screen into 15 sections, called priority bands. This was basically a
 kind of low-resolution Z-buffer. All background drawing commands were drawn both with a visual color
 and a priority value, so everytime the engine had to draw an animated object, each of its pixels were
 compared against the backgrounds pixel's priority value to decide if the pixel was to be drawn or not.
+All control-lines and boundaries where the player could not go was also drawn into this priority buffer.
 
 ## Implementation
 
@@ -54,3 +55,9 @@ slight reverse engineering.
 
 **Please fork and contribute!** If you make anything useful, please provide a pull request so I can integrate
 your work into the main repo.
+
+## License
+
+Licensed under the GPL version 3. 
+
+This is in no way affiliated with or endorsed by Sierra Entertainment or any other company.
