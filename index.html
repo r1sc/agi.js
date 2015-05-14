@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>AGI test</title>
+    </head>
+    <body>
+        <style>
+            canvas {
+                width: 320px;
+                height: 200px;
+                image-rendering: -moz-crisp-edges;
+                image-rendering: pixelated;
+            }
+        </style>
+        <canvas id="canvas" width="320" height="200"></canvas>
+        <script src="FastQueue.js"></script>
+        <script src="ByteStream.js"></script>
+        <script src="Fs.js"></script>
+        <script src="Agi_Logic.js"></script>
+        <script src="Agi_Pic.js"></script>
+        <script src="Agi_View.js"></script>
+        <script src="GameObject.js"></script>
+        <script src="Resources.js"></script>
+        <script src="LogicParser.js"></script>
+        <script src="Interpreter.js"></script>
+        <script src="Agi.js"></script>
+        <script>
+            var canvas = document.getElementById("canvas");
+            var context = canvas.getContext("2d");
+            canvas.onclick = function() {
+                Agi.start("game/", context);
+            };
+        </script>
+    </body>
+</html>

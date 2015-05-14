@@ -9,8 +9,8 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
-    <TypeScriptToolsVersion>1.0</TypeScriptToolsVersion>
-    <UseIISExpress>true</UseIISExpress>
+    <TypeScriptToolsVersion>1.4</TypeScriptToolsVersion>
+    <UseIISExpress>false</UseIISExpress>
     <IISExpressSSLPort />
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
@@ -33,7 +33,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>51665</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:51665/</IISUrl>
+          <IISUrl>http://localhost/agi</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
@@ -58,15 +58,6 @@
   <ItemGroup>
     <TypeScriptCompile Include="Agi.ts" />
     <Content Include="index.html" />
-    <Content Include="sq2\LOGDIR" />
-    <Content Include="sq2\OBJECT" />
-    <Content Include="sq2\PICDIR" />
-    <Content Include="sq2\SNDDIR" />
-    <Content Include="sq2\VIEWDIR" />
-    <Content Include="sq2\VOL.0" />
-    <Content Include="sq2\VOL.1" />
-    <Content Include="sq2\VOL.2" />
-    <Content Include="sq2\WORDS.TOK" />
     <TypeScriptCompile Include="Agi_Logic.ts" />
     <TypeScriptCompile Include="GameObject.ts" />
     <TypeScriptCompile Include="Interpreter.ts" />
@@ -92,16 +83,6 @@
     <Content Include="tst\VIEWDIR" />
     <Content Include="tst\VOL.0" />
     <Content Include="tst\WORDS.TOK" />
-    <Content Include="pq\LOGDIR" />
-    <Content Include="pq\OBJECT" />
-    <Content Include="pq\PICDIR" />
-    <Content Include="pq\SNDDIR" />
-    <Content Include="pq\VIEWDIR" />
-    <Content Include="pq\VOL.0" />
-    <Content Include="pq\VOL.1" />
-    <Content Include="pq\VOL.2" />
-    <Content Include="pq\VOL.3" />
-    <Content Include="pq\WORDS.TOK" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>

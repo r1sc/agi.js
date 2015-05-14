@@ -163,8 +163,11 @@ module Agi {
                     var obj = this.gameObjects[j];
                     if (obj.update) {
                         if (obj.draw)
-                            this.drawObject(obj, j);
+                            this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
                         this.updateObject(obj, j);
+                        if (obj.draw) {
+                            this.drawObject(obj, j);
+                        }
                     }
                 }
 
@@ -233,7 +236,7 @@ module Agi {
                 }
                 fontStream.position = chr * 8;
 
-                var data: Uint8Array = this.frameData.data;
+                var data: number[] = this.frameData.data;
                 for (var y: number = 0; y < 8; y++) {
                     var colData: number = fontStream.readUint8();
                     for (var x: number = 0; x < 8; x++) {
@@ -308,7 +311,7 @@ module Agi {
                 cel = view.loops[cel.mirroredLoop].cels[celNo];
             }
 
-            var data: Uint8Array = this.frameData.data;
+            var data: number[] = this.frameData.data;
             for (var cy: number = 0; cy < cel.height; cy++) {
                 if (cy + y - cel.height >= 200)
                     break;
@@ -355,6 +358,9 @@ module Agi {
         }
 
         updateObject(obj: GameObject, no: number) {
+            obj.oldX = obj.x;
+            obj.oldY = obj.y;
+
             var xStep: number = obj.stepSize;
             var yStep: number = obj.stepSize;
             switch (obj.movementFlag) {
@@ -416,97 +422,101 @@ module Agi {
                 newX = obj.x + xStep;
             obj.x = newX;
             obj.y = newY;
+
+            if (obj.draw) {
+                var view: View = this.loadedViews[obj.viewNo];
+                var cel: Cel = view.loops[obj.loop].cels[obj.cel];
+                this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
+
+                if (obj.x != obj.oldX || obj.y != obj.oldY) {
+                    if (obj.x <= 0) {
+                        if (no == 0)
+                            this.variables[2] = 4;
+                        else {
+                            this.variables[4] = no;
+                            this.variables[5] = 4;
+                        }
+                    } else if (obj.x + cel.width >= 160) {
+                        if (no == 0)
+                            this.variables[2] = 2;
+                        else {
+                            this.variables[4] = no;
+                            this.variables[5] = 2;
+                        }
+                    } else if (!obj.ignoreHorizon && obj.y <= this.horizon) {
+                        if (no == 0)
+                            this.variables[2] = 1;
+                        else {
+                            this.variables[4] = no;
+                            this.variables[5] = 1;
+                        }
+                    } else if (obj.y >= 168) {
+                        if (no == 0)
+                            this.variables[2] = 3;
+                        else {
+                            this.variables[4] = no;
+                            this.variables[5] = 3;
+                        }
+                    }
+                }
+
+                if (!obj.fixedPriority) {
+                    if (obj.y < 48)
+                        obj.priority = 4;
+                    else if (obj.y == 168)
+                        obj.priority = 15;
+                    else
+                        obj.priority = ((obj.y / 12) | 0) + 1;
+
+                }
+                if (!obj.fixedLoop) {
+                    if (view.loops.length > 1 && view.loops.length < 4) {
+                        if (obj.direction == 2 || obj.direction == 3 || obj.direction == 4 ||
+                            obj.direction == 6 || obj.direction == 7 || obj.direction == 8)
+                            obj.loop = 1;
+                    } else if (view.loops.length >= 4) {
+                        if (obj.direction == 1)
+                            obj.loop = 3;
+                        else if (obj.direction == 2 || obj.direction == 3 || obj.direction == 4)
+                            obj.loop = 0;
+                        else if (obj.direction == 5)
+                            obj.loop = 2;
+                        else if (obj.direction == 6 || obj.direction == 7 || obj.direction == 8)
+                            obj.loop = 1;
+                    }
+                }
+                if (obj.celCycling) {
+                    if (obj.nextCycle == 1) {
+                        if (obj.reverseCycle)
+                            obj.cel--;
+                        else
+                            obj.cel++;
+                        var endOfLoop: boolean = false;
+                        if (obj.cel < 0) {
+                            if (obj.callAtEndOfLoop)
+                                obj.cel = 0;
+                            else
+                                obj.cel = view.loops[obj.loop].cels.length - 1;
+                            endOfLoop = true;
+                        } else if (obj.cel > view.loops[obj.loop].cels.length - 1) {
+                            if (obj.callAtEndOfLoop)
+                                obj.cel = view.loops[obj.loop].cels.length - 1;
+                            else
+                                obj.cel = 0;
+                            endOfLoop = true;
+                        }
+                        if (endOfLoop && obj.callAtEndOfLoop) {
+                            obj.celCycling = false;
+                            this.flags[obj.flagToSetWhenFinished] = true;
+                        }
+                        obj.nextCycle = obj.cycleTime;
+                    } else
+                        obj.nextCycle--;
+                }
+            }
         }
 
         drawObject(obj: GameObject, no: number) {
-            var view: View = this.loadedViews[obj.viewNo];
-            var cel: Cel = view.loops[obj.loop].cels[obj.cel];
-
-            if (obj.x != obj.oldX || obj.y != obj.oldY) {
-                if (obj.x <= 0) {
-                    if (no == 0)
-                        this.variables[2] = 4;
-                    else {
-                        this.variables[4] = no;
-                        this.variables[5] = 4;
-                    }
-                } else if (obj.x + cel.width >= 160) {
-                    if (no == 0)
-                        this.variables[2] = 2;
-                    else {
-                        this.variables[4] = no;
-                        this.variables[5] = 2;
-                    }
-                } else if (!obj.ignoreHorizon && obj.y <= this.horizon) {
-                    if (no == 0)
-                        this.variables[2] = 1;
-                    else {
-                        this.variables[4] = no;
-                        this.variables[5] = 1;
-                    }
-                } else if (obj.y >= 168) {
-                    if (no == 0)
-                        this.variables[2] = 3;
-                    else {
-                        this.variables[4] = no;
-                        this.variables[5] = 3;
-                    }
-                }
-            }
-
-            if (!obj.fixedPriority) {
-                if (obj.y < 48)
-                    obj.priority = 4;
-                else if (obj.y == 168)
-                    obj.priority = 15;
-                else
-                    obj.priority = ((obj.y / 12) | 0) + 1;
-
-            }
-            if (!obj.fixedLoop) {
-                if (view.loops.length > 1 && view.loops.length < 4) {
-                    if (obj.direction == 2 || obj.direction == 3 || obj.direction == 4 ||
-                        obj.direction == 6 || obj.direction == 7 || obj.direction == 8)
-                        obj.loop = 1;
-                } else if (view.loops.length >= 4) {
-                    if (obj.direction == 1)
-                        obj.loop = 3;
-                    else if (obj.direction == 2 || obj.direction == 3 || obj.direction == 4)
-                        obj.loop = 0;
-                    else if (obj.direction == 5)
-                        obj.loop = 2;
-                    else if (obj.direction == 6 || obj.direction == 7 || obj.direction == 8)
-                        obj.loop = 1;
-                }
-            }
-            if (obj.celCycling) {
-                if (obj.nextCycle == 1) {
-                    if (obj.reverseCycle)
-                        obj.cel--;
-                    else
-                        obj.cel++;
-                    var endOfLoop: boolean = false;
-                    if (obj.cel < 0) {
-                        if (obj.callAtEndOfLoop)
-                            obj.cel = 0;
-                        else
-                            obj.cel = view.loops[obj.loop].cels.length - 1;
-                        endOfLoop = true;
-                    } else if (obj.cel > view.loops[obj.loop].cels.length - 1) {
-                        if (obj.callAtEndOfLoop)
-                            obj.cel = view.loops[obj.loop].cels.length - 1;
-                        else
-                            obj.cel = 0;
-                        endOfLoop = true;
-                    }
-                    if (endOfLoop && obj.callAtEndOfLoop) {
-                        obj.celCycling = false;
-                        this.flags[obj.flagToSetWhenFinished] = true;
-                    }
-                    obj.nextCycle = obj.cycleTime;
-                } else
-                    obj.nextCycle--;
-            }
             this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority, 4);
         }
 
@@ -758,14 +768,14 @@ module Agi {
         agi_stop_motion(objNo: number) {
             if (objNo == 0)
                 this.agi_program_control();
-            //this.gameObjects[objNo].motion = false;
+            this.gameObjects[objNo].motion = false;
             this.gameObjects[objNo].direction = Direction.Stopped;
         }
 
         agi_start_motion(objNo: number) {
             if (objNo == 0)
                 this.agi_player_control();
-            //this.gameObjects[objNo].motion = true;
+            this.gameObjects[objNo].motion = true;
         }
 
         agi_normal_motion(objNo: number) {
@@ -785,7 +795,7 @@ module Agi {
         }
 
         agi_set_loop_v(objNo: number, varNo: number) {
-            this.gameObjects[objNo].loop = this.variables[varNo];
+            this.agi_set_loop(objNo, this.variables[varNo]);
         }
 
         agi_fix_loop(objNo: number) {

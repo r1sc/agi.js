@@ -52,7 +52,10 @@ module Agi {
         update: boolean = true;
         reverseLoop: boolean = false;
         nextCycle: number = 0;
-        oldX: number;
-        oldY: number;
+
+        oldX: number = 0;
+        oldY: number = 0;
+        nextLoop: number = 0;
+        nextCel: number = 0;
     }
 } 
