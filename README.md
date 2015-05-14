@@ -45,6 +45,11 @@ The system is divided into a renderer, a logic parser, an interpreter and a reso
 The resource manager is mostly complete, save for a few assets that hasn't been taken into consideration 
 yet (sounds, dictionary etc.).
 
+The interpreter works in cycles, best described in the documentation above. Every cycle the interpreter
+executes logic script 0 and any referenced logic scripts. The script itself may execture commands on the 
+interpreter that updates game objects and draws them to both a visual frame buffer and a priority buffer. 
+The visual buffer is at the end of the cycle blitted to a canvas.
+
 The logic parser seems to be working well acording to my tests. The system mainly needs work on the 
 interpreter; the main issue being that some details are missing from the specs defined above and need
 slight reverse engineering.
