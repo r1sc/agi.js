@@ -51,11 +51,17 @@ module Agi {
         allowedSurface: number = 0;
         update: boolean = true;
         reverseLoop: boolean = false;
-        nextCycle: number = 0;
+        nextCycle: number = 1;
 
         oldX: number = 0;
         oldY: number = 0;
         nextLoop: number = 0;
         nextCel: number = 0;
+        oldLoop: number = 0;
+        oldCel: number = 0;
+        oldView: number = 0;
+        oldPriority: number = 0;
+        oldDrawX: number = 0;
+        oldDrawY: number = 0;
     }
 } 

@@ -163,13 +163,7 @@ module Agi {
                 for (var j = 0; j < this.gameObjects.length; j++) {
                     var obj = this.gameObjects[j];
                     if (obj.update) {
-                        if (obj.draw)
-                            this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
                         this.updateObject(obj, j);
-                        if (obj.draw) {
-                            this.drawObject(obj, j);
-                        }
-
                     }
                 }
 
@@ -281,17 +275,29 @@ module Agi {
         clearView(viewNo: number, loopNo: number, celNo: number, x: number, y: number, priority: number) {
             var view: View = this.loadedViews[viewNo];
             var cel: Cel = view.loops[loopNo].cels[celNo];
-            if (cel.mirrored)
+            var mirror: boolean = cel.mirrored;
+            if (cel.mirrored) {
                 cel = view.loops[cel.mirroredLoop].cels[celNo];
+            }
 
-            var data = this.frameData.data;
+            var data: number[] = this.frameData.data;
             for (var cy: number = 0; cy < cel.height; cy++) {
+                if (cy + y - cel.height >= 200)
+                    break;
                 for (var cx: number = 0; cx < cel.width; cx++) {
+                    if (cx + x >= 160)
+                        break;
                     var idx: number = (cy + y + 1 - cel.height) * 160 + (cx + x);
-                    if (this.framePriorityData.data[idx] > priority)
+                    if (priority < this.framePriorityData.data[idx])
                         continue;
+                    var ccx: number = cx;
+                    if (mirror)
+                        ccx = cel.width - cx - 1;
+                    var color = cel.pixelData[cy * cel.width + ccx];
+                    if (color == cel.transparentColor)
+                        continue;
+                    color = this.visualBuffer.data[idx];
                     this.framePriorityData.data[idx] = this.priorityBuffer.data[idx];
-                    var color = this.visualBuffer.data[idx];
                     var rgb = Agi.palette[color];
                     data[idx * 8 + 0] = (rgb >>> 16) & 0xFF;
                     data[idx * 8 + 1] = (rgb >>> 8) & 0xFF;
@@ -305,7 +311,7 @@ module Agi {
             }
         }
 
-        bltView(viewNo: number, loopNo: number, celNo: number, x: number, y: number, priority: number, margin: number) {
+        bltView(viewNo: number, loopNo: number, celNo: number, x: number, y: number, priority: number) {
             var view: View = this.loadedViews[viewNo];
             var cel: Cel = view.loops[loopNo].cels[celNo];
             var mirror: boolean = cel.mirrored;
@@ -427,7 +433,6 @@ module Agi {
             if (obj.draw) {
                 var view: View = this.loadedViews[obj.viewNo];
                 var cel: Cel = view.loops[obj.loop].cels[obj.cel];
-                this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
 
                 if (obj.x != obj.oldX || obj.y != obj.oldY) {
                     if (obj.x <= 0) {
@@ -514,11 +519,22 @@ module Agi {
                     } else
                         obj.nextCycle--;
                 }
+                
+                this.drawObject(obj, no);
             }
         }
 
         drawObject(obj: GameObject, no: number) {
-            this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority, 4);
+            if (obj.oldView != obj.viewNo || obj.oldLoop != obj.loop || obj.oldCel != obj.cel || obj.oldDrawX != obj.x || obj.oldDrawY != obj.y || obj.oldPriority != obj.priority)
+                this.clearView(obj.oldView, obj.oldLoop, obj.oldCel, obj.oldDrawX, obj.oldDrawY, obj.oldPriority);
+            this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
+            
+            obj.oldDrawX = obj.x;
+            obj.oldDrawY = obj.y;
+            obj.oldView = obj.viewNo;
+            obj.oldLoop = obj.loop;
+            obj.oldCel = obj.cel;
+            obj.oldPriority = obj.priority;
         }
 
         // ReSharper disable InconsistentNaming
@@ -668,7 +684,7 @@ module Agi {
 
         agi_draw(objNo: number) {
             this.gameObjects[objNo].draw = true;
-            this.drawObject(this.gameObjects[objNo], objNo);
+            //this.drawObject(this.gameObjects[objNo], objNo);
         }
 
         agi_set_view(objNo: number, viewNo: number) {
@@ -751,7 +767,7 @@ module Agi {
         agi_end_of_loop(objNo: number, flagNo: number) {
             this.gameObjects[objNo].callAtEndOfLoop = true;
             this.gameObjects[objNo].flagToSetWhenFinished = flagNo;
-            this.gameObjects[objNo].celCycling = true;
+            //this.gameObjects[objNo].celCycling = true;
         }
 
         agi_reverse_cycle(objNo: number) {
@@ -859,8 +875,8 @@ module Agi {
         }
 
         agi_force_update(objNo: number) {
-            var obj: GameObject = this.gameObjects[objNo];
-            this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority, 4);
+            //var obj: GameObject = this.gameObjects[objNo];
+            //this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority, 4);
         }
 
         agi_ignore_horizon(objNo: number) {
@@ -880,7 +896,8 @@ module Agi {
         }
 
         agi_add_to_pic(viewNo: number, loopNo: number, celNo: number, x: number, y: number, priority: number, margin: number) {
-            this.bltView(viewNo, loopNo, celNo, x, y, priority, margin);
+            // TODO: Add margin
+            this.bltView(viewNo, loopNo, celNo, x, y, priority);
         }
         agi_add_to_pic_v(varNo1: number, varNo2: number, varNo3: number, varNo4: number, varNo5: number, varNo6: number, varNo7: number) {
             this.agi_add_to_pic(
@@ -956,7 +973,7 @@ module Agi {
         agi_erase(objNo: number) {
             var obj: GameObject = this.gameObjects[objNo];
             obj.draw = false;
-            this.clearView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
+            this.clearView(obj.oldView, obj.oldLoop, obj.oldCel, obj.oldDrawX, obj.oldDrawY, obj.oldPriority);
             obj.loop = 0;
             obj.cel = 0;
         }
