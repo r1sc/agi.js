@@ -76,9 +76,10 @@ module Agi {
             this.flags[11] = true;      // Logic 0 executed for the first time
             this.flags[5] = true;       // Room script executed for the first time
 
-            for (var j = 0; j < 16; j++) {
-                this.gameObjects[j] = new GameObject();
-            }
+            this.agi_unanimate_all();
+            //for (var j = 0; j < 16; j++) {
+            //    this.gameObjects[j] = new GameObject();
+            //}
             this.agi_load_logic(0);
 
             this.cycle();
@@ -210,8 +211,8 @@ module Agi {
                 }
             }
             console.log("----- CYCLE ------");
-            this.bltText(23, 0, "V68 = " + this.variables[68]);
-            this.bltText(24, 0, this.strings[0] + this.inputBuffer);
+            //this.bltText(23, 0, "V68 = " + this.variables[68]);
+            //this.bltText(24, 0, this.strings[0] + this.inputBuffer);
             this.bltFrame();
         }
 
@@ -368,71 +369,104 @@ module Agi {
         updateObject(obj: GameObject, no: number) {
             obj.oldX = obj.x;
             obj.oldY = obj.y;
-            var xStep: number = obj.stepSize;
-            var yStep: number = obj.stepSize;
-            switch (obj.movementFlag) {
-                case MovementFlags.Normal:
-
-                    break;
-                case MovementFlags.MoveTo:
-                    if (obj.moveToStep != 0) {
-                        xStep = yStep = obj.moveToStep;
-                    }
-                    if (obj.moveToX > obj.x) {
-                        if (obj.moveToY > obj.y)
-                            obj.direction = Direction.DownRight;
-                        else if (obj.moveToY < obj.y)
-                            obj.direction = Direction.UpRight;
-                        else
-                            obj.direction = Direction.Right;
-                    }
-                    else if (obj.moveToX < obj.x) {
-                        if (obj.moveToY > obj.y)
-                            obj.direction = Direction.DownLeft;
-                        else if (obj.moveToY < obj.y)
-                            obj.direction = Direction.UpLeft;
-                        else
-                            obj.direction = Direction.Left;
-                    } else {
-                        if (obj.moveToY > obj.y)
-                            obj.direction = Direction.Down;
-                        else if (obj.moveToY < obj.y)
-                            obj.direction = Direction.Up;
-                        else {
-                            obj.direction = Direction.Stopped;
-                            this.flags[obj.flagToSetWhenFinished] = true;
-                            obj.movementFlag = MovementFlags.Normal;
-                        }
-                    }
-
-                    yStep = Math.min(yStep, Math.abs(obj.y - obj.moveToY));
-                    xStep = Math.min(xStep, Math.abs(obj.x - obj.moveToX));
-                    break;
-                case MovementFlags.ChaseEgo:
-
-                    break;
-
-                case MovementFlags.Wander:
-
-                    break;
-                default:
-            }
-            var newX: number = obj.x;
-            var newY: number = obj.y;
-            if (obj.direction == 1 || obj.direction == 2 || obj.direction == 8)
-                newY = obj.y - yStep;
-            else if (obj.direction == 5 || obj.direction == 4 || obj.direction == 6)
-                newY = obj.y + yStep;
-            if (obj.direction == 7 || obj.direction == 8 || obj.direction == 6)
-                newX = obj.x - xStep;
-            else if (obj.direction == 3 || obj.direction == 2 || obj.direction == 4)
-                newX = obj.x + xStep;
-            obj.x = newX;
-            obj.y = newY;
 
             if (obj.draw) {
                 var view: View = this.loadedViews[obj.viewNo];
                 var cel: Cel = view.loops[obj.loop].cels[obj.cel];
+
+                var xStep: number = obj.stepSize;
+                var yStep: number = obj.stepSize;
+                switch (obj.movementFlag) {
+                    case MovementFlags.Normal:
+
+                        break;
+                    case MovementFlags.MoveTo:
+                        if (obj.moveToStep != 0) {
+                            xStep = yStep = obj.moveToStep;
+                        }
+                        if (obj.moveToX > obj.x) {
+                            if (obj.moveToY > obj.y)
+                                obj.direction = Direction.DownRight;
+                            else if (obj.moveToY < obj.y)
+                                obj.direction = Direction.UpRight;
+                            else
+                                obj.direction = Direction.Right;
+                        }
+                        else if (obj.moveToX < obj.x) {
+                            if (obj.moveToY > obj.y)
+                                obj.direction = Direction.DownLeft;
+                            else if (obj.moveToY < obj.y)
+                                obj.direction = Direction.UpLeft;
+                            else
+                                obj.direction = Direction.Left;
+                        } else {
+                            if (obj.moveToY > obj.y)
+                                obj.direction = Direction.Down;
+                            else if (obj.moveToY < obj.y)
+                                obj.direction = Direction.Up;
+                        }
+
+                        yStep = Math.min(yStep, Math.abs(obj.y - obj.moveToY));
+                        xStep = Math.min(xStep, Math.abs(obj.x - obj.moveToX));
+                        break;
+                    case MovementFlags.ChaseEgo:
+
+                        break;
+
+                    case MovementFlags.Wander:
+                        break;
+                    default:
+                }
+                var newX: number = obj.x;
+                var newY: number = obj.y;
+                if (obj.direction == 1 || obj.direction == 2 || obj.direction == 8)
+                    newY = obj.y - yStep;
+                else if (obj.direction == 5 || obj.direction == 4 || obj.direction == 6)
+                    newY = obj.y + yStep;
+                if (obj.direction == 7 || obj.direction == 8 || obj.direction == 6)
+                    newX = obj.x - xStep;
+                else if (obj.direction == 3 || obj.direction == 2 || obj.direction == 4)
+                    newX = obj.x + xStep;
+                
+                if (obj.ignoreBlocks == false && newY != obj.y) {
+                    for (var xNumber: number = 0; xNumber < cel.width; xNumber++) {
+                        var idx: number = newY * 160 + (obj.x + xNumber);
+                        if (this.priorityBuffer.data[idx] == 0 || this.priorityBuffer.data[idx] == 1) {
+                            newY = obj.y;
+                            obj.direction = 0;
+                            if (obj.movementFlag == MovementFlags.Wander) {
+                                obj.direction = this.randomBetween(1, 9);
+                                if (no == 0)
+                                    this.variables[6] = obj.direction;
+                            }
+
+                            break;
+                        }
+                    }
+                }
+                obj.y = newY;
+
+                if (obj.ignoreBlocks == false && newX != obj.x) {
+                    var leftIdx = obj.y * 160 + newX;
+                    var rightIdx = obj.y * 160 + newX + cel.width;
+                    if (this.priorityBuffer.data[leftIdx] == 0 || this.priorityBuffer.data[rightIdx] == 0 || this.priorityBuffer.data[leftIdx] == 1 || this.priorityBuffer.data[rightIdx] == 1) {
+                        newX = obj.x;
+                        obj.direction = 0;
+                        if (obj.movementFlag == MovementFlags.Wander) {
+                            obj.direction = this.randomBetween(1, 9);
+                            if (no == 0)
+                                this.variables[6] = obj.direction;
+                        }
+                    }
+                    
+                }
+                obj.x = newX;
+
+                if (obj.movementFlag == MovementFlags.MoveTo && obj.x == obj.moveToX && obj.y == obj.moveToY) {
+                    obj.direction = Direction.Stopped;
+                    this.flags[obj.flagToSetWhenFinished] = true;
+                    obj.movementFlag = MovementFlags.Normal;
+                }
 
                 if (obj.x != obj.oldX || obj.y != obj.oldY) {
                     if (obj.x <= 0) {
@@ -519,7 +553,7 @@ module Agi {
                     } else
                         obj.nextCycle--;
                 }
-                
+
                 this.drawObject(obj, no);
             }
         }
@@ -528,13 +562,17 @@ module Agi {
             if (obj.oldView != obj.viewNo || obj.oldLoop != obj.loop || obj.oldCel != obj.cel || obj.oldDrawX != obj.x || obj.oldDrawY != obj.y || obj.oldPriority != obj.priority)
                 this.clearView(obj.oldView, obj.oldLoop, obj.oldCel, obj.oldDrawX, obj.oldDrawY, obj.oldPriority);
             this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
-            
+
             obj.oldDrawX = obj.x;
             obj.oldDrawY = obj.y;
             obj.oldView = obj.viewNo;
             obj.oldLoop = obj.loop;
             obj.oldCel = obj.cel;
             obj.oldPriority = obj.priority;
+        }
+
+        randomBetween(min: number, max: number): number {
+            return ((Math.random() * (max - min)) + min) | 0;
         }
 
         // ReSharper disable InconsistentNaming
@@ -679,12 +717,11 @@ module Agi {
 
         agi_animate_obj(objNo: number) {
             this.gameObjects[objNo] = new GameObject();
-            this.gameObjects[objNo].update = true;
         }
 
         agi_draw(objNo: number) {
             this.gameObjects[objNo].draw = true;
-            //this.drawObject(this.gameObjects[objNo], objNo);
+            this.drawObject(this.gameObjects[objNo], objNo);
         }
 
         agi_set_view(objNo: number, viewNo: number) {
@@ -699,9 +736,8 @@ module Agi {
         }
 
         agi_unanimate_all() {
-            for (var i = 0; i < this.gameObjects.length; i++) {
-                this.gameObjects[i].update = false;
-            }
+            this.gameObjects = [];
+            this.gameObjects[0] = new GameObject();
         }
 
         agi_player_control() {
@@ -872,9 +908,12 @@ module Agi {
 
         agi_start_update(objNo: number) {
             this.gameObjects[objNo].update = true;
+            this.gameObjects[objNo].draw = true;
         }
 
         agi_force_update(objNo: number) {
+            this.gameObjects[objNo].draw = true;
+            this.agi_draw(objNo);
             //var obj: GameObject = this.gameObjects[objNo];
             //this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority, 4);
         }
@@ -912,7 +951,7 @@ module Agi {
         }
 
         agi_random(start: number, end: number, varNo: number) {
-            this.variables[varNo] = (Math.random() * (end - start)) + start;
+            this.variables[varNo] = this.randomBetween(start, end);
         }
 
         agi_move_obj(objNo: number, x: number, y: number, stepSpeed: number, flagNo: number) {
@@ -937,6 +976,12 @@ module Agi {
 
         agi_wander(objNo: number) {
             this.gameObjects[objNo].movementFlag = MovementFlags.Wander;
+            this.gameObjects[objNo].direction = this.randomBetween(1, 9);
+
+            if (objNo == 0) {
+                this.variables[6] = this.gameObjects[objNo].direction;
+                this.agi_program_control();
+            }
         }
 
         aginormal_motion(objNo: number) {
