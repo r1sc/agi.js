@@ -20,5 +20,14 @@
             }
             return (b1 << 8) + b2;
         }
+
+        readInt16(littleEndian: boolean = true): number {
+            var b1: number = this.buffer[this.startPosition + this.position++];
+            var b2: number = this.buffer[this.startPosition + this.position++];
+            if (littleEndian) {
+                return ((((b2 << 8) | b1) << 16) >> 16);
+            }
+            return ((((b1 << 8) | b2) << 16) >> 16);
+        }
     }
 }

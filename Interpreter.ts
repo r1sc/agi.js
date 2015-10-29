@@ -77,9 +77,6 @@ module Agi {
             this.flags[5] = true;       // Room script executed for the first time
 
             this.agi_unanimate_all();
-            //for (var j = 0; j < 16; j++) {
-            //    this.gameObjects[j] = new GameObject();
-            //}
             this.agi_load_logic(0);
 
             this.cycle();
@@ -90,28 +87,29 @@ module Agi {
             this.flags[4] = false;  // said accepted user input
 
             this.haveKey = (this.keyboardCharBuffer.length + this.keyboardSpecialBuffer.length) > 0;
+            var egoDir: number = 0;
             if (this.allowInput) {
                 while (this.keyboardSpecialBuffer.length > 0) {
                     var key: number = this.keyboardSpecialBuffer.shift();
                     if (!this.dialogue) {
                         if (key == 37) // left
-                            this.gameObjects[0].direction = 7;
+                            egoDir = 7;
                         else if (key == 36) // left-up
-                            this.gameObjects[0].direction = 8;
+                            egoDir = 8;
                         else if (key == 38) // up
-                            this.gameObjects[0].direction = 1;
+                            egoDir = 1;
                         else if (key == 33) // right-up
-                            this.gameObjects[0].direction = 2;
+                            egoDir = 2;
                         else if (key == 39) // right
-                            this.gameObjects[0].direction = 3;
+                            egoDir = 3;
                         else if (key == 34) // right-down
-                            this.gameObjects[0].direction = 4;
+                            egoDir = 4;
                         else if (key == 40) // down
-                            this.gameObjects[0].direction = 5;
+                            egoDir = 5;
                         else if (key == 35) // down-left
-                            this.gameObjects[0].direction = 6;
+                            egoDir = 6;
                         else if (key == 12) // stop
-                            this.gameObjects[0].direction = 0;
+                            egoDir = 0;
                         else if (key == 27) { // Escape
                             alert("Menu");
                         }
@@ -153,8 +151,7 @@ module Agi {
                 this.agi_call(0);
                 this.flags[11] = false;     // Logic 0 executed for the first time
 
-                if (this.gameObjects[0] != null)
-                    this.gameObjects[0].direction = this.variables[6];
+                this.gameObjects[0].direction = this.variables[6];
                 this.variables[5] = 0;
                 this.variables[4] = 0;
                 this.flags[5] = false;
@@ -164,7 +161,10 @@ module Agi {
                 for (var j = 0; j < this.gameObjects.length; j++) {
                     var obj = this.gameObjects[j];
                     if (obj.update) {
-                        this.updateObject(obj, j);
+                        if (j == 0 && this.programControl == false)
+                            obj.direction = egoDir;
+                        else
+                            obj.updateDirection(this);
                     }
                 }
 
@@ -737,7 +737,9 @@ module Agi {
 
         agi_unanimate_all() {
             this.gameObjects = [];
-            this.gameObjects[0] = new GameObject();
+            for (var j = 0; j < 16; j++) {
+                this.gameObjects[j] = new GameObject();
+            }
         }
 
         agi_player_control() {
@@ -1127,7 +1129,75 @@ module Agi {
 
         }
 
+        agi_status() {
+            
+        }
+
+        agi_clear_text_rect(n1: number, n2: number, n3: number, n4: number, n5: number) {
+            
+        }
+
+        agi_menu_input() {
+
+        }
+
         agi_graphics() {
+
+        }
+
+        agi_show_obj(objNo: number) {
+
+        }
+
+        agi_show_obj_v(varNo: number) {
+            
+        }
+
+        agi_get(itemNo: number) {
+            
+        }
+
+        agi_discard_sound(n1: number) {
+
+        }
+
+        agi_save_game() {
+            
+        }
+
+        agi_restore_game() {
+
+        }
+
+        agi_restart_game() {
+
+        }
+
+        agi_quit(n1: number) {
+
+        }
+
+        agi_pause() {
+
+        }
+
+        agi_toggle_monitor() {
+
+        }
+
+        agi_init_joy() {
+
+        }
+
+        agi_version() {
+
+        }
+
+        agi_echo_line() {
+            
+        }
+
+        agi_cancel_line() {
 
         }
 
@@ -1167,6 +1237,19 @@ module Agi {
         agi_set_scan_start(offset: number) {
             this.loadedLogics[this.logicNo].scanStart = offset;
         }
+
+        agi_reset_scan_start() {
+            this.loadedLogics[this.logicNo].scanStart = 0;
+        }
+        
+        agi_close_window() {
+            
+        }
+
+        agi_normal_cycle(objNo: number) {
+            
+        }
+
         /* Tests */
         agi_test_equaln(varNo: number, val: number): boolean {
             return this.variables[varNo] == val;

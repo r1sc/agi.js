@@ -7,11 +7,22 @@
         (...args: number[]): boolean;
     }
 
+    class Expression {
+        opcode: number;
+        opcodeName: string;
+        args: number[];
+        negate: boolean;
+        toString() {
+            return this.opcodeName + "(" + this.args.join(",") + ")";
+        }
+    }
+
     export class LogicParser {
         logic: Logic;
         scanStart: number;
         private decryptionKey: string = "Avis Durgan";
         private entryPoint: number;
+        private messagesStartOffset: number;
         private static tests: string[] = [
             "equaln",
             "equalv",
@@ -228,6 +239,9 @@
         private readUint16(): number {
             return this.logic.data.readUint16();
         }
+        private readInt16(): number {
+            return this.logic.data.readInt16();
+        }
         private jumpRelative(offset: number): void {
             this.logic.data.position += offset;
         }
@@ -237,6 +251,7 @@
             var messageOffset: number = this.readUint16();
             this.logic.data.position += messageOffset;
             var pos = this.logic.data.position;
+            this.messagesStartOffset = pos;
             var numMessages: number = this.readUint8();
             var ptrMessagesEnd: number = this.readUint16();
             var decryptionIndex: number = 0;
@@ -260,6 +275,113 @@
             }
             this.logic.data.position = pos - messageOffset;
             this.scanStart = this.entryPoint = this.logic.data.position;
+        }
+
+        decompile(): string[] {
+            var lines: string[] = [];
+            var scopes: number[] = [];
+            var scopeEndOffset: number = 0;
+            var lastGotoOffset: number = 0;
+
+            this.logic.data.position = this.scanStart;
+            var buffer: string = "";
+            while (this.logic.data.position < this.messagesStartOffset) {
+                while (scopeEndOffset > 0 && this.logic.data.position == scopeEndOffset) {
+                    lines.push("}");
+                    if (scopes.length > 0)
+                        scopeEndOffset = scopes.pop();
+                    else
+                        scopeEndOffset = 0;
+                }
+                var opcode: number = this.readUint8();
+                if (opcode == 0xFF) {
+                    var orterms: Expression[] = [];
+                    var andterms: Expression[] = [];
+                    var or: boolean = false;
+
+                    while (true) {
+                        var negate: boolean = false;
+                        opcode = this.readUint8();
+                        if (opcode == 0xFF)
+                            break;
+                        else if (opcode == 0xFC) {
+                            or = !or;
+                            continue;
+                        }
+                        else if (opcode == 0xFD) {
+                            negate = true;
+                            opcode = this.readUint8();
+                        }
+                        var funcName = LogicParser.tests[opcode - 1];
+                        var test = <ITest>this.interpreter["agi_test_" + funcName];
+                        var args: number[] = [];
+                        var numArgs = test.length;
+                        if (opcode == 0x0E) {
+                            numArgs = this.readUint8() * 2;
+                        }
+                        for (var i = 0; i < numArgs; i++) {
+                            var arg = this.readUint8();
+                            args.push(arg);
+                        }
+                        var expression = new Expression();
+                        expression.opcode = opcode;
+                        expression.opcodeName = funcName;
+                        expression.args = args;
+                        expression.negate = negate;
+
+                        if (or)
+                            orterms.push(expression);
+                        else
+                            andterms.push(expression);
+                    }
+                    if (scopeEndOffset != 0)
+                        scopes.push(scopeEndOffset);
+                    scopeEndOffset = this.logic.data.position + this.readUint16() + 2;
+
+                    buffer = "if(";
+                    var ortermsString = orterms.join(" || ");
+                    buffer += andterms.length > 0 && orterms.length > 1 ? "(" + ortermsString + ")" : ortermsString;
+                    if (orterms.length > 0 && andterms.length > 0)
+                        buffer += " && ";
+                    buffer += andterms.join(" && ");
+                    buffer += ") {";
+                    lines.push(buffer);
+                    buffer = "";
+                }
+                else if (opcode == 0xFE) {
+                    var rel = this.readInt16();
+                    var offset = this.logic.data.position + rel;
+                    if (rel < 0) {
+                        lines.push("goto(" + offset + ");");
+                        lastGotoOffset = this.logic.data.position;
+                    } else {
+                        lines.push("} else {");
+                        scopeEndOffset = offset;
+                    }
+                } else {
+                    if (opcode == 0x00) {
+                        lines.push("return();");
+                        continue;
+                    }
+                    funcName = LogicParser.statements[opcode];
+                    var statement = <IStatement>this.interpreter["agi_" + funcName];
+                    var args: number[] = [];
+                    for (var i = 0; i < statement.length; i++) {
+                        var arg = this.readUint8();
+                        args.push(arg);
+                    }
+                    lines.push(funcName.replace(/_/g, ".") + "(" + args.join(",") + ");");
+                }
+            }
+
+            lines.push("");
+            lines.push("// Messages");
+            var j: number = 0;
+            this.logic.messages.forEach((message, i) => {
+                lines.push("#message" + i + ' = "' + message.replace(/"/g, '\\"') + '"');
+            });
+
+            return lines;
         }
 
         private static stNo: number = 0;
