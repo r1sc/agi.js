@@ -24,6 +24,7 @@ module Agi {
         x: number = 0;
         y: number = 0;
         draw: boolean = false;
+        redraw: boolean = false;
         direction: Direction = Direction.Stopped;
         viewNo: number = 0;
         loop: number = 0;

@@ -82,12 +82,13 @@ module Agi {
             this.cycle();
         }
 
+        
         cycle(): void {
             this.flags[2] = false;  // The player has entered a command
             this.flags[4] = false;  // said accepted user input
 
             this.haveKey = (this.keyboardCharBuffer.length + this.keyboardSpecialBuffer.length) > 0;
-            var egoDir: number = 0;
+            var egoDir: number = this.variables[6];
             if (this.allowInput) {
                 while (this.keyboardSpecialBuffer.length > 0) {
                     var key: number = this.keyboardSpecialBuffer.shift();
@@ -140,10 +141,11 @@ module Agi {
             }
             this.keyboardCharBuffer = [];
             this.keyboardSpecialBuffer = [];
+
             if (this.programControl) {
-                this.gameObjects[0].direction = this.variables[6];
+                egoDir = this.variables[6];
             } else {
-                this.variables[6] = this.gameObjects[0].direction;
+                this.variables[6] = egoDir;
             }
 
             // calculate direction of movement
@@ -151,20 +153,22 @@ module Agi {
                 this.agi_call(0);
                 this.flags[11] = false;     // Logic 0 executed for the first time
 
-                this.gameObjects[0].direction = this.variables[6];
+                //this.gameObjects[0].direction = this.variables[6];
                 this.variables[5] = 0;
                 this.variables[4] = 0;
                 this.flags[5] = false;
                 this.flags[6] = false;
                 this.flags[12] = false;
 
+
                 for (var j = 0; j < this.gameObjects.length; j++) {
                     var obj = this.gameObjects[j];
                     if (obj.update) {
-                        if (j == 0 && this.programControl == false)
+                        if (j == 0)
                             obj.direction = egoDir;
-                        else
-                            obj.updateDirection(this);
+                        //else
+                        //    obj.updateDirection(this);
+                        this.updateObject(obj, j);
                     }
                 }
 
@@ -559,10 +563,11 @@ module Agi {
         }
 
         drawObject(obj: GameObject, no: number) {
-            if (obj.oldView != obj.viewNo || obj.oldLoop != obj.loop || obj.oldCel != obj.cel || obj.oldDrawX != obj.x || obj.oldDrawY != obj.y || obj.oldPriority != obj.priority)
+            if (obj.redraw || obj.oldView != obj.viewNo || obj.oldLoop != obj.loop || obj.oldCel != obj.cel || obj.oldDrawX != obj.x || obj.oldDrawY != obj.y || obj.oldPriority != obj.priority) {
+                obj.redraw = false;
                 this.clearView(obj.oldView, obj.oldLoop, obj.oldCel, obj.oldDrawX, obj.oldDrawY, obj.oldPriority);
-            this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
-
+                this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
+            }
             obj.oldDrawX = obj.x;
             obj.oldDrawY = obj.y;
             obj.oldView = obj.viewNo;
@@ -699,6 +704,9 @@ module Agi {
 
         agi_show_pic(): void {
             this.bltPic();
+            this.gameObjects.forEach(obj => {
+                obj.redraw = true;
+            });
         }
 
         agi_discard_pic(varNo: number): void {
@@ -721,7 +729,7 @@ module Agi {
 
         agi_draw(objNo: number) {
             this.gameObjects[objNo].draw = true;
-            this.drawObject(this.gameObjects[objNo], objNo);
+            //this.drawObject(this.gameObjects[objNo], objNo);
         }
 
         agi_set_view(objNo: number, viewNo: number) {
@@ -910,7 +918,7 @@ module Agi {
 
         agi_start_update(objNo: number) {
             this.gameObjects[objNo].update = true;
-            this.gameObjects[objNo].draw = true;
+            //this.gameObjects[objNo].draw = true;
         }
 
         agi_force_update(objNo: number) {
@@ -1223,7 +1231,7 @@ module Agi {
         }
 
         agi_print(msgNo: number) {
-            //this.loadedLogics[this.logicNo].logic.messages[msgNo];
+            alert(this.loadedLogics[this.logicNo].logic.messages[msgNo]);
         }
 
         agi_print_v(varNo: number) {
