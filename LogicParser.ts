@@ -7,13 +7,88 @@
         (...args: number[]): boolean;
     }
 
-    class Expression {
-        opcode: number;
-        opcodeName: string;
-        args: number[];
-        negate: boolean;
-        toString() {
-            return this.opcodeName + "(" + this.args.join(",") + ")";
+    class AstNode {
+        constructor(public opcode: number, public byteOffset: number) {
+            
+        }
+        public args: number[];
+    }
+
+    class Scope
+    {
+        public endOffset: number;
+        public body: AstNode[] = [];
+    }
+
+    class ExpressionNode extends AstNode  {
+        public eval(interpreter: Interpreter): boolean {
+            throw "Cannot invoke ExpressionNode directly";
+        }
+    }
+
+    class BinaryNode extends ExpressionNode {
+        public type: number;
+        public left: ExpressionNode;
+        public right: ExpressionNode;
+    }
+
+    class AndNode extends BinaryNode {
+        public eval(interpreter: Interpreter): boolean {
+            var left = this.left.eval(interpreter);
+            var right = this.right.eval(interpreter);
+            return left && right;
+        }
+    }
+
+    class OrNode extends BinaryNode {
+        public eval(interpreter: Interpreter): boolean {
+            var left = this.left.eval(interpreter);
+            var right = this.right.eval(interpreter);
+            return left || right;
+        }
+    }
+
+    class TestNode extends ExpressionNode {
+        constructor(opcode: number, byteOffset: number) {
+            super(opcode, byteOffset);
+        }
+
+        public test: ITest;
+        public negate: boolean = false;
+
+        public eval(interpreter: Interpreter): boolean {
+            var result = this.test.apply(interpreter, this.args);
+            return this.negate ? !result : result;
+        }
+    }
+
+    class StatementNode extends AstNode {
+        constructor(opcode: number, byteOffset: number, private statement: IStatement) {
+            super(opcode, byteOffset);
+        }
+        public execute(interpreter: Interpreter) {
+            this.statement.apply(interpreter, this.args);
+        }
+    }
+
+    class IfNode extends AstNode {
+        constructor(byteOffset: number) {
+            super(0xFF, byteOffset);
+        }
+        public expression: ExpressionNode;
+        public then: Scope = new Scope();
+        public else: Scope;
+    }
+
+    class GotoNode extends AstNode {
+        constructor(byteOffset: number, public offset: number) {
+            super(0xFE, byteOffset);
+        }
+    }
+
+    class ReturnNode extends AstNode {
+        constructor(byteOffset: number) {
+            super(0x00, byteOffset);
         }
     }
 
@@ -277,26 +352,27 @@
             this.scanStart = this.entryPoint = this.logic.data.position;
         }
 
-        decompile(): string[] {
-            var lines: string[] = [];
-            var scopes: number[] = [];
-            var scopeEndOffset: number = 0;
+        decompile(): Scope {
+            var program: Scope = new Scope();
+            var scope: Scope = program;
+            var scopeStack: Scope[] = [];
+            var currentIfNode: IfNode;
             var lastGotoOffset: number = 0;
 
             this.logic.data.position = this.scanStart;
-            var buffer: string = "";
             while (this.logic.data.position < this.messagesStartOffset) {
-                while (scopeEndOffset > 0 && this.logic.data.position == scopeEndOffset) {
-                    lines.push("}");
-                    if (scopes.length > 0)
-                        scopeEndOffset = scopes.pop();
+                while (scope.endOffset > 0 && this.logic.data.position == scope.endOffset) {
+                    if (scopeStack.length > 0)
+                        scope = scopeStack.pop();
                     else
-                        scopeEndOffset = 0;
+                        scope.endOffset = 0;
                 }
                 var opcode: number = this.readUint8();
                 if (opcode == 0xFF) {
-                    var orterms: Expression[] = [];
-                    var andterms: Expression[] = [];
+                    currentIfNode = new IfNode(this.logic.data.position);
+                    scope.body.push(currentIfNode);
+
+                    var expressionStack: ExpressionNode[] = [];
                     var or: boolean = false;
 
                     while (true) {
@@ -323,44 +399,46 @@
                             var arg = this.readUint8();
                             args.push(arg);
                         }
-                        var expression = new Expression();
-                        expression.opcode = opcode;
-                        expression.opcodeName = funcName;
-                        expression.args = args;
-                        expression.negate = negate;
+                        var testNode = new TestNode(opcode, this.logic.data.position);
+                        testNode.opcode = opcode;
+                        testNode.args = args;
+                        testNode.negate = negate;
+                        expressionStack.push(testNode);
 
-                        if (or)
-                            orterms.push(expression);
-                        else
-                            andterms.push(expression);
+                        if (expressionStack.length == 2) {
+                            var bn: BinaryNode;
+                            if (or)
+                                bn = new OrNode(opcode, this.logic.data.position);
+                            else {
+                                bn = new AndNode(opcode, this.logic.data.position);
+                            }
+                            bn.right = expressionStack.pop();
+                            bn.left = expressionStack.pop();
+                            expressionStack.push(bn);
+                        }
                     }
-                    if (scopeEndOffset != 0)
-                        scopes.push(scopeEndOffset);
-                    scopeEndOffset = this.logic.data.position + this.readUint16() + 2;
 
-                    buffer = "if(";
-                    var ortermsString = orterms.join(" || ");
-                    buffer += andterms.length > 0 && orterms.length > 1 ? "(" + ortermsString + ")" : ortermsString;
-                    if (orterms.length > 0 && andterms.length > 0)
-                        buffer += " && ";
-                    buffer += andterms.join(" && ");
-                    buffer += ") {";
-                    lines.push(buffer);
-                    buffer = "";
+                    currentIfNode.expression = expressionStack.pop();
+                    currentIfNode.then = new Scope();
+
+                    scopeStack.push(scope);
+                    scope = currentIfNode.then;
+                    scope.endOffset = this.logic.data.position + this.readUint16() + 2;
                 }
                 else if (opcode == 0xFE) {
                     var rel = this.readInt16();
                     var offset = this.logic.data.position + rel;
                     if (rel < 0) {
-                        lines.push("goto(" + offset + ");");
+                        scope.body.push(new GotoNode(this.logic.data.position, offset));
                         lastGotoOffset = this.logic.data.position;
                     } else {
-                        lines.push("} else {");
-                        scopeEndOffset = offset;
+                        currentIfNode.else = new Scope();
+                        scope = currentIfNode.else;
+                        scope.endOffset = offset;
                     }
                 } else {
                     if (opcode == 0x00) {
-                        lines.push("return();");
+                        scope.body.push(new ReturnNode(this.logic.data.position));
                         continue;
                     }
                     funcName = LogicParser.statements[opcode];
@@ -370,18 +448,19 @@
                         var arg = this.readUint8();
                         args.push(arg);
                     }
-                    lines.push(funcName.replace(/_/g, ".") + "(" + args.join(",") + ");");
+                    scope.body.push(new StatementNode(opcode, this.logic.data.position, statement));
                 }
             }
 
-            lines.push("");
-            lines.push("// Messages");
-            var j: number = 0;
-            this.logic.messages.forEach((message, i) => {
-                lines.push("#message" + i + ' = "' + message.replace(/"/g, '\\"') + '"');
-            });
+            //lines.push("");
+            //lines.push("// Messages");
+            //var j: number = 0;
+            //this.logic.messages.forEach((message, i) => {
+            //    lines.push("#message" + i + ' = "' + message.replace(/"/g, '\\"') + '"');
+            //});
 
-            return lines;
+            //return lines;
+            return program;
         }
 
         private static stNo: number = 0;
@@ -483,6 +562,7 @@
                     }
                 } else {
                     funcName = LogicParser.statements[opCodeNr];
+                    console.log(funcName);
                     statement = <IStatement>this.interpreter["agi_" + funcName];
                     if (statement === undefined)
                         throw "Statement not implemented: " + funcName;
