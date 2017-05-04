@@ -1,9 +1,3 @@
-/// <reference path="Resources.ts" />
-/// <reference path="Interpreter.ts" />
-/// <reference path="Agi_Pic.ts" />
-/// <reference path="Fs.ts" />
-/// <reference path="ByteStream.ts" />
-
 /*
   Adventure Game Interpreter
   Original IBM PC version by Jeff Stephenson and Cris Iden
@@ -17,7 +11,7 @@
   defined by Lance Ewing, Peter Kelly, Claudio Matsuoka, Stu George and David Symonds
   at http://wiki.scummvm.org/index.php/AGI/Specifications
 */
-module Agi {
+namespace Agi {
     export var palette: number[] = [
         0x000000,
         0x0000AA,
@@ -37,7 +31,7 @@ module Agi {
         0xFFFFFF
     ];
 
-    var interpreter: Interpreter;
+    export var interpreter: Interpreter;
     export function start(path: string, context: CanvasRenderingContext2D) {
         Resources.load(path, () => {
             interpreter = new Interpreter(context);

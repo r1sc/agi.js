@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "target": "es2015",
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "outFile": "dist/agi.js",
+        "watch": true
+    }
+}

@@ -1,5 +1,4 @@
-﻿/// <reference path="Agi_View.ts" />
-module Agi {
+﻿namespace Agi {
     export enum MovementFlags {
         Normal,
         ChaseEgo,

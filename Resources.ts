@@ -1,4 +1,4 @@
-﻿module Agi.Resources {
+﻿namespace Resources {
     interface IDirectoryEntry {
         volNo: number;
         volOffset: number;
@@ -84,4 +84,4 @@
             });
         });
     }
-} 
+}

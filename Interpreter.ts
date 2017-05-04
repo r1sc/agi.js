@@ -1,8 +1,4 @@
-﻿/// <reference path="Agi_Logic.ts" />
-/// <reference path="LogicParser.ts" />
-/// <reference path="Agi_View.ts" />
-/// <reference path="GameObject.ts" />
-module Agi {
+﻿namespace Agi {
     export class Interpreter {
         /* Interpreter vars */
         programControl: boolean;
@@ -47,6 +43,8 @@ module Agi {
         dialogueStrX: number;
         dialogueMode: number;
 
+        screen: Screen = new Screen(this);
+
         constructor(private context: CanvasRenderingContext2D) {
             this.visualBuffer = new Bitmap();
             this.priorityBuffer = new Bitmap();
@@ -82,35 +80,38 @@ module Agi {
             this.cycle();
         }
 
+        setEgoDir(newEgoDir: number){
+            let egoDir = this.variables[6];
+            this.variables[6] = egoDir == newEgoDir ? 0 : newEgoDir;
+        }
         
         cycle(): void {
             this.flags[2] = false;  // The player has entered a command
             this.flags[4] = false;  // said accepted user input
 
             this.haveKey = (this.keyboardCharBuffer.length + this.keyboardSpecialBuffer.length) > 0;
-            var egoDir: number = this.variables[6];
             if (this.allowInput) {
                 while (this.keyboardSpecialBuffer.length > 0) {
                     var key: number = this.keyboardSpecialBuffer.shift();
                     if (!this.dialogue) {
                         if (key == 37) // left
-                            egoDir = 7;
+                            this.setEgoDir(7);
                         else if (key == 36) // left-up
-                            egoDir = 8;
+                            this.setEgoDir( 8);
                         else if (key == 38) // up
-                            egoDir = 1;
+                            this.setEgoDir( 1);
                         else if (key == 33) // right-up
-                            egoDir = 2;
+                            this.setEgoDir( 2);
                         else if (key == 39) // right
-                            egoDir = 3;
+                            this.setEgoDir( 3);
                         else if (key == 34) // right-down
-                            egoDir = 4;
+                            this.setEgoDir( 4);
                         else if (key == 40) // down
-                            egoDir = 5;
+                            this.setEgoDir( 5);
                         else if (key == 35) // down-left
-                            egoDir = 6;
+                            this.setEgoDir( 6);
                         else if (key == 12) // stop
-                            egoDir = 0;
+                            this.setEgoDir( 0);
                         else if (key == 27) { // Escape
                             alert("Menu");
                         }
@@ -132,11 +133,12 @@ module Agi {
                     }
                 }
             }
-
+            
+            let egoDir: number = this.variables[6];
             if (this.dialogue) {
                 if (this.dialogueMode == 1) { // string input
                     this.strings[this.dialogueStrNo] = this.inputBuffer;
-                    this.bltText(this.dialogueStrY, this.dialogueStrX, this.dialoguePrompt + this.strings[this.dialogueStrNo]);
+                    this.screen.bltText(this.dialogueStrY, this.dialogueStrX, this.dialoguePrompt + this.strings[this.dialogueStrNo]);
                 }
             }
             this.keyboardCharBuffer = [];
@@ -207,153 +209,20 @@ module Agi {
                     this.variables[2] = 0;
                     this.flags[2] = false;
 
-                    this.agi_load_logic_v(0);
+                    //this.agi_load_logic_v(0);
                     this.flags[5] = true;
                     this.newroom = 0;
                 } else {
                     break;
                 }
             }
-            console.log("----- CYCLE ------");
+            //console.log("----- CYCLE ------");
             //this.bltText(23, 0, "V68 = " + this.variables[68]);
             //this.bltText(24, 0, this.strings[0] + this.inputBuffer);
             this.bltFrame();
         }
 
-        bltText(row: number, col: number, text: string) {
-            var fontStream = Agi.Resources.fontStream;
-            var sRegex: RegExp = /\%s(\d+)/;
-            var regexResult: RegExpExecArray;
-            while ((regexResult = sRegex.exec(text)) !== null) {
-                text = text.slice(0, regexResult.index) + this.strings[regexResult[1]] + text.slice(regexResult.index + regexResult.length + 1);
-            }
-
-            for (var i: number = 0; i < text.length; i++) {
-                var chr: number = text[i].charCodeAt(0);
-                if (chr == 10) {
-                    row++;
-                    col = 0;
-                    continue;
-                }
-                fontStream.position = chr * 8;
-
-                var data: number[] = this.frameData.data;
-                for (var y: number = 0; y < 8; y++) {
-                    var colData: number = fontStream.readUint8();
-                    for (var x: number = 0; x < 8; x++) {
-                        var color: number = 0x00;
-                        if ((colData & 0x80) == 0x80)
-                            color = 0xFF;
-                        var idx: number = (row * 8 + y) * 320 + (col * 8 + x);
-                        data[idx * 4 + 0] = color;
-                        data[idx * 4 + 1] = color;
-                        data[idx * 4 + 2] = color;
-                        data[idx * 4 + 3] = 0xFF;
-                        colData = colData << 1;
-                    }
-                }
-
-                col++;
-                if (col >= 40) {
-                    col = 0;
-                    row++;
-                }
-            }
-        }
-
-        bltPic() {
-            var data = this.frameData.data;
-            for (var k = 0; k < Bitmap.width * Bitmap.height; k++) {
-                this.framePriorityData.data[k] = this.priorityBuffer.data[k];
-                var rgb = Agi.palette[this.visualBuffer.data[k]];
-                data[k * 8 + 0] = (rgb >>> 16) & 0xFF;
-                data[k * 8 + 1] = (rgb >>> 8) & 0xFF;
-                data[k * 8 + 2] = rgb & 0xFF;
-                data[k * 8 + 3] = 255;
-                data[k * 8 + 4] = (rgb >>> 16) & 0xFF;
-                data[k * 8 + 5] = (rgb >>> 8) & 0xFF;
-                data[k * 8 + 6] = rgb & 0xFF;
-                data[k * 8 + 7] = 255;
-            }
-        }
-
-        clearView(viewNo: number, loopNo: number, celNo: number, x: number, y: number, priority: number) {
-            var view: View = this.loadedViews[viewNo];
-            var cel: Cel = view.loops[loopNo].cels[celNo];
-            var mirror: boolean = cel.mirrored;
-            if (cel.mirrored) {
-                cel = view.loops[cel.mirroredLoop].cels[celNo];
-            }
-
-            var data: number[] = this.frameData.data;
-            for (var cy: number = 0; cy < cel.height; cy++) {
-                if (cy + y - cel.height >= 200)
-                    break;
-                for (var cx: number = 0; cx < cel.width; cx++) {
-                    if (cx + x >= 160)
-                        break;
-                    var idx: number = (cy + y + 1 - cel.height) * 160 + (cx + x);
-                    if (priority < this.framePriorityData.data[idx])
-                        continue;
-                    var ccx: number = cx;
-                    if (mirror)
-                        ccx = cel.width - cx - 1;
-                    var color = cel.pixelData[cy * cel.width + ccx];
-                    if (color == cel.transparentColor)
-                        continue;
-                    color = this.visualBuffer.data[idx];
-                    this.framePriorityData.data[idx] = this.priorityBuffer.data[idx];
-                    var rgb = Agi.palette[color];
-                    data[idx * 8 + 0] = (rgb >>> 16) & 0xFF;
-                    data[idx * 8 + 1] = (rgb >>> 8) & 0xFF;
-                    data[idx * 8 + 2] = rgb & 0xFF;
-                    data[idx * 8 + 3] = 255;
-                    data[idx * 8 + 4] = (rgb >>> 16) & 0xFF;
-                    data[idx * 8 + 5] = (rgb >>> 8) & 0xFF;
-                    data[idx * 8 + 6] = rgb & 0xFF;
-                    data[idx * 8 + 7] = 255;
-                }
-            }
-        }
-
-        bltView(viewNo: number, loopNo: number, celNo: number, x: number, y: number, priority: number) {
-            var view: View = this.loadedViews[viewNo];
-            var cel: Cel = view.loops[loopNo].cels[celNo];
-            var mirror: boolean = cel.mirrored;
-            if (cel.mirrored) {
-                cel = view.loops[cel.mirroredLoop].cels[celNo];
-            }
-
-            var data: number[] = this.frameData.data;
-            for (var cy: number = 0; cy < cel.height; cy++) {
-                if (cy + y - cel.height >= 200)
-                    break;
-                for (var cx: number = 0; cx < cel.width; cx++) {
-                    if (cx + x >= 160)
-                        break;
-                    var idx: number = (cy + y + 1 - cel.height) * 160 + (cx + x);
-                    if (priority < this.framePriorityData.data[idx])
-                        continue;
-                    var ccx: number = cx;
-                    if (mirror)
-                        ccx = cel.width - cx - 1;
-                    var color = cel.pixelData[cy * cel.width + ccx];
-                    if (color == cel.transparentColor)
-                        continue;
-                    this.framePriorityData.data[idx] = priority;
-                    var rgb = Agi.palette[color];
-                    data[idx * 8 + 0] = (rgb >>> 16) & 0xFF;
-                    data[idx * 8 + 1] = (rgb >>> 8) & 0xFF;
-                    data[idx * 8 + 2] = rgb & 0xFF;
-                    data[idx * 8 + 3] = 255;
-                    data[idx * 8 + 4] = (rgb >>> 16) & 0xFF;
-                    data[idx * 8 + 5] = (rgb >>> 8) & 0xFF;
-                    data[idx * 8 + 6] = rgb & 0xFF;
-                    data[idx * 8 + 7] = 255;
-                }
-            }
-        }
-
+        
         bltFrame() {
             /*var data = this.frameData.data;
             for (var k = 0; k < Bitmap.width * Bitmap.height; k++) {
@@ -558,23 +427,10 @@ module Agi {
                         obj.nextCycle--;
                 }
 
-                this.drawObject(obj, no);
+                this.screen.drawObject(obj, no);
             }
         }
 
-        drawObject(obj: GameObject, no: number) {
-            if (obj.redraw || obj.oldView != obj.viewNo || obj.oldLoop != obj.loop || obj.oldCel != obj.cel || obj.oldDrawX != obj.x || obj.oldDrawY != obj.y || obj.oldPriority != obj.priority) {
-                obj.redraw = false;
-                this.clearView(obj.oldView, obj.oldLoop, obj.oldCel, obj.oldDrawX, obj.oldDrawY, obj.oldPriority);
-                this.bltView(obj.viewNo, obj.loop, obj.cel, obj.x, obj.y, obj.priority);
-            }
-            obj.oldDrawX = obj.x;
-            obj.oldDrawY = obj.y;
-            obj.oldView = obj.viewNo;
-            obj.oldLoop = obj.loop;
-            obj.oldCel = obj.cel;
-            obj.oldPriority = obj.priority;
-        }
 
         randomBetween(min: number, max: number): number {
             return ((Math.random() * (max - min)) + min) | 0;
@@ -703,7 +559,7 @@ module Agi {
         }
 
         agi_show_pic(): void {
-            this.bltPic();
+            this.screen.bltPic();
             this.gameObjects.forEach(obj => {
                 obj.redraw = true;
             });
@@ -806,7 +662,7 @@ module Agi {
             this.gameObjects[objNo].celCycling = true;
         }
 
-        aginormal_cycle(objNo: number) {
+        agi_normal_cycle(objNo: number) {
             this.gameObjects[objNo].reverseCycle = false;
         }
 
@@ -946,7 +802,7 @@ module Agi {
 
         agi_add_to_pic(viewNo: number, loopNo: number, celNo: number, x: number, y: number, priority: number, margin: number) {
             // TODO: Add margin
-            this.bltView(viewNo, loopNo, celNo, x, y, priority);
+            this.screen.bltView(viewNo, loopNo, celNo, x, y, priority);
         }
         agi_add_to_pic_v(varNo1: number, varNo2: number, varNo3: number, varNo4: number, varNo5: number, varNo6: number, varNo7: number) {
             this.agi_add_to_pic(
@@ -1028,7 +884,7 @@ module Agi {
         agi_erase(objNo: number) {
             var obj: GameObject = this.gameObjects[objNo];
             obj.draw = false;
-            this.clearView(obj.oldView, obj.oldLoop, obj.oldCel, obj.oldDrawX, obj.oldDrawY, obj.oldPriority);
+            this.screen.clearView(obj.oldView, obj.oldLoop, obj.oldCel, obj.oldDrawX, obj.oldDrawY, obj.oldPriority);
             obj.loop = 0;
             obj.cel = 0;
         }
@@ -1043,7 +899,7 @@ module Agi {
         }
 
         agi_display(row: number, col: number, msg: number) {
-            this.bltText(row, col, this.loadedLogics[this.logicNo].logic.messages[msg]);
+            this.screen.bltText(row, col, this.loadedLogics[this.logicNo].logic.messages[msg]);
         }
 
         agi_display_v(varNo1: number, varNo2: number, varNo3: number) {
@@ -1052,7 +908,7 @@ module Agi {
 
         agi_clear_lines(fromRow: number, row: number, colorNo: number) {
             for (var y = fromRow; y < row + 1; y++) {
-                this.bltText(y, 0, "                                        ");
+                this.screen.bltText(y, 0, "                                        ");
             }
         }
 
@@ -1254,10 +1110,6 @@ module Agi {
             
         }
 
-        agi_normal_cycle(objNo: number) {
-            
-        }
-
         /* Tests */
         agi_test_equaln(varNo: number, val: number): boolean {
             return this.variables[varNo] == val;
@@ -1330,6 +1182,10 @@ module Agi {
             } else {
                 this.variables[varNo] = 255;
             }
+        }
+
+        agi_object_on_water() {
+
         }
 
         // ReSharper restore InconsistentNaming

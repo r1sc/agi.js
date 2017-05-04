@@ -1,6 +1,4 @@
-/// <reference path="FastQueue.ts" />
-/// <reference path="ByteStream.ts" />
-module Agi {
+namespace Agi {
     export class Bitmap {
         data: Uint8Array;
         static width: number = 160;
@@ -223,7 +221,7 @@ module Agi {
             ["xp"],
             [" x ", "xxx", "xpx", "xxx", " x "],
             [" xx ", " xx ", "xxxx", "xxpx", "xxxx", " xx ", " xx "],
-            ["  x  ", " xxx ", "xxxxx", "xxxxx", "xxpxx", "xxxxx", "xxxxx", " xxx ", "  x  "]
+            ["  x  ", " xxx ", "xxxxx", "xxxxx", "xxpxx", "xxxxx", "xxxxx", " xxx ", "  x  "],
             ["  xx  ", " xxxx ", " xxxx ", " xxxx ", "xxxxxx", "xxxpxx", "xxxxxx", " xxxx ", " xxxx ", " xxxx ", "  xx  "],
             ["  xxx  ", " xxxxx ", " xxxxx ", " xxxxx ", "xxxxxxx", "xxxxxxx", "xxxpxxx", "xxxxxxx", "xxxxxxx", " xxxxx ", " xxxxx ", " xxxxx ", "  xxx  "],
             ["   xx   ", "  xxxx  ", " xxxxxx ", " xxxxxx ", " xxxxxx ", "xxxxxxxx", "xxxxxxxx", "xxxxpxxx", "xxxxxxxx", "xxxxxxxx", " xxxxxx ", " xxxxxx ", " xxxxxx ", "  xxxx  ", "   xx   "]

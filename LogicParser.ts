@@ -1,4 +1,4 @@
-﻿module Agi {
+﻿namespace Agi {
     interface IStatement {
         (...args: number[]): void;
     }
@@ -496,7 +496,7 @@
                     var n2: number = this.readUint8();
                     var offset: number = (((n2 << 8) | n1) << 16) >> 16;
                     this.jumpRelative(offset);
-                    console.log("L" + this.logic.no + ": " + "goto " + offset);
+                    //console.log("L" + this.logic.no + ": " + "goto " + offset);
                 }
                 else if (opCodeNr == 0xFF) {
                     if (testMode) {
@@ -562,12 +562,12 @@
                     }
                 } else {
                     funcName = LogicParser.statements[opCodeNr];
-                    console.log(funcName);
+                    //console.log(funcName);
                     statement = <IStatement>this.interpreter["agi_" + funcName];
                     if (statement === undefined)
                         throw "Statement not implemented: " + funcName;
                     debugLine = funcName;
-                    console.log(LogicParser.stNo + " @L" + this.logic.no + ": " + debugLine);
+                    //console.log(LogicParser.stNo + " @L" + this.logic.no + ": " + debugLine);
 
                     args = [];
                     for (var i = 0; i < statement.length; i++) {

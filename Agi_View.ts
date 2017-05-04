@@ -1,4 +1,4 @@
-﻿module Agi {
+﻿namespace Agi {
     export class Cel {
         pixelData: Uint8Array;
         constructor(public width: number, public height: number, public transparentColor: number, public mirrored: boolean, public mirroredLoop: number) {
