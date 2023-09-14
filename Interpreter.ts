@@ -132,7 +132,8 @@
                         break;
                     }
                 }
-            }
+            } 
+                    
             
             let egoDir: number = this.variables[6];
             if (this.dialogue) {
@@ -220,6 +221,12 @@
             //this.bltText(23, 0, "V68 = " + this.variables[68]);
             //this.bltText(24, 0, this.strings[0] + this.inputBuffer);
             this.bltFrame();
+
+            // do sound
+            if(this.sound && this.sound.started == true && this.sound.ended == false){
+                this.sound.playCycle()
+            }
+
         }
 
         
@@ -969,15 +976,22 @@
         }
 
         agi_load_sound(soundNo: number) {
-
+            // console.log("load sound / not used")
         }
 
         agi_sound(soundNo: number, flagNo: number) {
+            if(this.sound) {
+                this.sound.stop()
+            }
 
+            this.sound = new Agi.Sound(soundNo, Resources.readAgiResource(Resources.AgiResource.Sound, soundNo));
+            this.sound.play(soundNo, flagNo)
         }
 
         agi_stop_sound() {
-
+            if(this.sound) {
+                this.sound.stop()
+            }
         }
 
         agi_reposition_to(objNo: number, x: number, y: number) {
