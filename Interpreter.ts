@@ -1025,6 +1025,10 @@
             }
         }
 
+        agi_reposition(objNo: number, x: number, y: number) {
+            this.agi_reposition_to(objNo, x, y)
+        }
+
         agi_reposition_to(objNo: number, x: number, y: number) {
             var obj: GameObject = this.gameObjects[objNo];
             this.agi_position(objNo, x, y);
@@ -1249,6 +1253,10 @@
 
         }
 
+        agi_undefined() {
+            // at some point remove this and figure out what is producing this instruction
+            // invalid index in opcodes?
+        }
         // ReSharper restore InconsistentNaming
     }
 } 
