@@ -1112,7 +1112,7 @@
 
         agi_cancel_line() {
 
-        }
+        }// 
 
         agi_open_dialogue() {
             this.dialogue = true;
@@ -1120,7 +1120,6 @@
         }
 
         agi_close_dialogue() {
-            //this.dialogue = false;
             this.dialogueBox.close();
 
         }
@@ -1139,12 +1138,21 @@
         }
 
         agi_print(msgNo: number) {
+            // this is not the right way to do this but haven't figure out what the right way is
+            // where do thes get cleared out -- it should be in the main loop after the response.
+            this.flags[2] = false;
+            this.inputBuffer = ""
+            
+
             var msg = this.loadedLogics[this.logicNo].logic.messages[msgNo]
             msg = msg.replace("%s1", "Philbert") // need to get the users name and centralize string processing
 
             this.allowInput = true;
-            this.dialogueBox.open()
-            this.dialogueBox.setText(msg);
+
+            if(this.dialogueBox.innerEl.innerHTML != msg) {
+                this.dialogueBox.open()
+                this.dialogueBox.setText(msg);    
+            }            
         }
 
         agi_print_at_v(varNo: number) {
@@ -1224,7 +1232,27 @@
         }
 
         agi_test_said(wordGroups: number[]) {
-            return false;
+            var said = false
+
+            if(this.flags[2] == true){
+                console.log("User Command: (" + this.inputBuffer + ") checked against " + wordGroups )
+                console.log(wordGroups)
+                
+                // The player has entered a command
+                if(this.inputBuffer === "look") {
+                    if(wordGroups.toString() == "2") {
+                        //Let me look at stuff for the love of ken!
+                        //this.inputBuffer = ""    
+                        said = true 
+                        // this.flags[2] = false;
+                        // this.inputBuffer = ""
+                        console.log("looking!")
+                    }
+                }
+            }
+
+
+            return said
         }
 
         agi_test_compare_strings(strNo1: number, strNo2: number): boolean {
@@ -1246,11 +1274,11 @@
         }
 
         agi_object_on_land() {
-
+            console.log("on land")
         }
 
         agi_object_on_water() {
-
+            console.log("on water")
         }
 
         agi_undefined() {

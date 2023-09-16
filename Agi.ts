@@ -38,14 +38,25 @@ namespace Agi {
             interpreter.start();
 
             window.onkeypress = function (e) {
-                if (e.which != 13) {
-                    interpreter.keyboardCharBuffer.push(e.which);
-                    console.log("Keypress");
+                if(e.keyCode == 32) {
+                    // block the default scroll behavior
+                    e.preventDefault();
                 }
+
+                //if (e.which != 13) {
+                    // enter should be allowed to close a dialog
+                    interpreter.keyboardCharBuffer.push(e.which);
+                    console.log("Keypress: "+e.keyCode);
+                //}
             };
             window.onkeydown = function (e) {
+                if(e.keyCode == 40) {
+                    // block the default scroll behavior
+                    e.preventDefault();
+                }
+
                 interpreter.keyboardSpecialBuffer.push(e.which);
-                console.log("keydown");
+                console.log("keydown: "+e.keyCode);
             };
 
             (function renderloop() {
