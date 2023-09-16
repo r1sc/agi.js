@@ -94,6 +94,7 @@
             this.flags[4] = false;  // said accepted user input
 
             this.haveKey = (this.keyboardCharBuffer.length + this.keyboardSpecialBuffer.length) > 0;
+            
             if (this.allowInput) {
                 while (this.keyboardSpecialBuffer.length > 0) {
                     var key: number = this.keyboardSpecialBuffer.shift();
@@ -119,11 +120,16 @@
                         else if (key == 27) { // Escape
                             alert("Menu");
                         }
+                        else if(key == 13) {
+                            this.dialogue = false;
+                            this.agi_close_dialogue();
+                        }    
                     }
                     else if(key == 13) {
                         this.dialogue = false;
                         this.agi_close_dialogue();
                     }
+                    
     
                 }
 
@@ -136,6 +142,9 @@
                     } else if (key == 8 && this.inputBuffer.length > 0) { // Backspace
                         this.inputBuffer = this.inputBuffer.substr(0, this.inputBuffer.length - 1);
                     } else if (key == 13) {
+                        this.dialogue = false;
+                        this.agi_close_dialogue();
+
                         this.flags[2] = true; // The player has entered a command
                         this.keyboardCharBuffer = [];
                         break;
@@ -543,9 +552,18 @@
             this.agi_muln(varNo1, this.variables[varNo2]);
         }
 
+        agi_div_n(varNo: number, val: number): void {
+            this.agi_divn(varNo, val)
+        }
+
         agi_divn(varNo: number, val: number): void {
             this.variables[this.variables[varNo]] /= val;
         }
+        
+        agi_div_v(varNo1: number, varNo2: number): void {
+            this.agi_divv(varNo1, varNo2)
+        }
+
         agi_divv(varNo1: number, varNo2: number): void {
             this.agi_divn(varNo1, this.variables[varNo2]);
         }
@@ -770,6 +788,10 @@
 
         agi_current_loop(objNo: number, varNo: number) {
             this.variables[varNo] = this.gameObjects[objNo].loop;
+        }
+
+        agi_current_view(objNo: number, varNo: number) {
+            this.variables[varNo] = this.gameObjects[objNo].viewNo;
         }
 
         agi_currentview(objNo: number, varNo: number) {
@@ -1114,9 +1136,15 @@
 
         agi_print(msgNo: number) {
             var msg = this.loadedLogics[this.logicNo].logic.messages[msgNo]
-            //alert(msg);
+            msg = msg.replace("%s1", "Philbert") // need to get the users name and centralize string processing
+
+            this.allowInput = true;
             this.dialogueBox.open()
             this.dialogueBox.setText(msg);
+        }
+
+        agi_print_at_v(varNo: number) {
+            this.agi_print(this.variables[varNo]);
         }
 
         agi_print_v(varNo: number) {
@@ -1211,6 +1239,10 @@
             } else {
                 this.variables[varNo] = 255;
             }
+        }
+
+        agi_object_on_land() {
+
         }
 
         agi_object_on_water() {
