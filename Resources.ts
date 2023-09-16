@@ -77,7 +77,13 @@
                 for (var j: number = 0; j < volNames.length; j++) {
                     volBuffers[j] = buffers[volNames[j]];
                 }
-                Fs.downloadAllFiles("", ["font.bin"], (buffers: Fs.IByteStreamDict) => {
+
+                // fonts don't come with the games. Maybe there should be a call for system files?
+                // assume they are a folder up?
+                var fontPath = path.endsWith("/") ? path.substring(0, path.length-1) : path // remove trailing slash
+                    fontPath = fontPath.substring(0, fontPath.lastIndexOf("/")+1) // remove last folder 
+
+                    Fs.downloadAllFiles(fontPath, ["font.bin"], (buffers: Fs.IByteStreamDict) => {
                     fontStream = buffers["font.bin"];
                     done();
                 });

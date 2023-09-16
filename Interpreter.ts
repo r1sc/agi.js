@@ -44,8 +44,12 @@
         dialogueMode: number;
 
         screen: Screen = new Screen(this);
+        
+        sound: Sound;
+        dialogueBox: Dialogue;
 
         constructor(private context: CanvasRenderingContext2D) {
+            this.dialogueBox = new Dialogue();
             this.visualBuffer = new Bitmap();
             this.priorityBuffer = new Bitmap();
             this.framePriorityData = new Bitmap();
@@ -116,6 +120,11 @@
                             alert("Menu");
                         }
                     }
+                    else if(key == 13) {
+                        this.dialogue = false;
+                        this.agi_close_dialogue();
+                    }
+    
                 }
 
                 while (this.keyboardCharBuffer.length > 0) {
@@ -139,7 +148,7 @@
             if (this.dialogue) {
                 if (this.dialogueMode == 1) { // string input
                     this.strings[this.dialogueStrNo] = this.inputBuffer;
-                    this.screen.bltText(this.dialogueStrY, this.dialogueStrX, this.dialoguePrompt + this.strings[this.dialogueStrNo]);
+                    //this.screen.bltText(this.dialogueStrY, this.dialogueStrX, this.dialoguePrompt + this.strings[this.dialogueStrNo]);
                 }
             }
             this.keyboardCharBuffer = [];
@@ -1081,10 +1090,13 @@
 
         agi_open_dialogue() {
             this.dialogue = true;
+            this.dialogueBox.open();
         }
 
         agi_close_dialogue() {
-            this.dialogue = false;
+            //this.dialogue = false;
+            this.dialogueBox.close();
+
         }
 
         agi_get_string(strNo: number, msg: string, x: number, y: number, maxLen: number) {
@@ -1101,7 +1113,10 @@
         }
 
         agi_print(msgNo: number) {
-            alert(this.loadedLogics[this.logicNo].logic.messages[msgNo]);
+            var msg = this.loadedLogics[this.logicNo].logic.messages[msgNo]
+            //alert(msg);
+            this.dialogueBox.open()
+            this.dialogueBox.setText(msg);
         }
 
         agi_print_v(varNo: number) {

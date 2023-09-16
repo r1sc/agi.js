@@ -1,5 +1,13 @@
 ﻿namespace Agi {
     export class Sound {
+        data: any;
+        started: boolean
+        ended: boolean
+        frame: number
+        oscillator: any;
+        audioCtx: any;
+        voices: any;
+
         constructor(soundNo, data) {
             this.data = data
             this.started = false

@@ -4,6 +4,6 @@
         "noImplicitAny": false,
         "sourceMap": true,
         "outFile": "dist/agi.js",
-        "watch": true
+//        "watch": true
     }
 }
