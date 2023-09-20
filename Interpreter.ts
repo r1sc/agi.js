@@ -572,6 +572,10 @@
             console.log("NEW_ROOM " + roomNo);
             this.newroom = roomNo;
         }
+        agi_get_room_v(varNo: number) {
+
+        }
+        
         agi_new_room_v(varNo: number) {
             this.agi_new_room(this.variables[varNo]);
         }
@@ -1142,6 +1146,7 @@
             // where do thes get cleared out -- it should be in the main loop after the response.
             this.flags[2] = false;
             this.inputBuffer = ""
+            this.setEgoDir(0);
             
 
             var msg = this.loadedLogics[this.logicNo].logic.messages[msgNo]
