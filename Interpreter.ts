@@ -1236,28 +1236,53 @@
             return haveKey;
         }
 
-        agi_test_said(wordGroups: number[]) {
-            var said = false
+        agi_test_said(wg0: number, wg1: number, wg2: number, wg3: number, wg4: number, 
+                      wg5: number, wg7: number, wg8: number, wg9: number) {
+            // agi_test_said(wordGroups: number[]) {
+            // these args should be passed in as an array but they are not
+            var wordGroups = [wg0, wg1, wg2, wg3, wg4, wg5, wg7, wg8, wg9];
+                wordGroups = wordGroups.filter(v => v !== undefined); 
 
-            if(this.flags[2] == true){
-                console.log("User Command: (" + this.inputBuffer + ") checked against " + wordGroups )
-                console.log(wordGroups)
-                
+            var said = false;
+
+            if (this.flags[2] == true && this.inputBuffer != "") {
                 // The player has entered a command
-                if(this.inputBuffer === "look") {
-                    if(wordGroups.toString() == "2") {
-                        //Let me look at stuff for the love of ken!
-                        //this.inputBuffer = ""    
-                        said = true 
-                        // this.flags[2] = false;
-                        // this.inputBuffer = ""
-                        console.log("looking!")
+
+                // process input according to the spec
+                var input = this.inputBuffer
+                    // remove all punctuation
+                    input = input.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    input = input.replace(/\s{2,}/g," ");
+
+                    // lowercase every thing
+                    input = input.toLowerCase()
+
+                // break down the input into an array
+                var inputWords = input.split(" ");
+
+                // remove group 0 words
+                var fillerWords = Resources.words[0]
+                for(var fw=0; fw<fillerWords.length; fw++) {
+                    inputWords = inputWords.filter(v => v !== fillerWords[fw]); 
+                }
+
+                // evaluate the input
+                if(wordGroups.length <= inputWords.length) {
+                    for(var j=0; j<wordGroups.length; j++) {
+                        var words = Resources.words[wordGroups[j]];
+
+                        var inputWord = inputWords[j];
+                        if(words.includes(inputWord)) {
+                            if(j == (inputWords.length-1)) {
+                                said = true;
+                                break;
+                            }
+                        } 
                     }
                 }
             }
 
-
-            return said
+            return said;
         }
 
         agi_test_compare_strings(strNo1: number, strNo2: number): boolean {
