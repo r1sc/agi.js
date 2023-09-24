@@ -44,8 +44,12 @@
         dialogueMode: number;
 
         screen: Screen = new Screen(this);
+        
+        sound: Sound;
+        dialogueBox: Dialogue;
 
         constructor(private context: CanvasRenderingContext2D) {
+            this.dialogueBox = new Dialogue();
             this.visualBuffer = new Bitmap();
             this.priorityBuffer = new Bitmap();
             this.framePriorityData = new Bitmap();
@@ -90,6 +94,7 @@
             this.flags[4] = false;  // said accepted user input
 
             this.haveKey = (this.keyboardCharBuffer.length + this.keyboardSpecialBuffer.length) > 0;
+            
             if (this.allowInput) {
                 while (this.keyboardSpecialBuffer.length > 0) {
                     var key: number = this.keyboardSpecialBuffer.shift();
@@ -115,7 +120,17 @@
                         else if (key == 27) { // Escape
                             alert("Menu");
                         }
+                        else if(key == 13) {
+                            this.dialogue = false;
+                            this.agi_close_dialogue();
+                        }    
                     }
+                    else if(key == 13) {
+                        this.dialogue = false;
+                        this.agi_close_dialogue();
+                    }
+                    
+    
                 }
 
                 while (this.keyboardCharBuffer.length > 0) {
@@ -127,18 +142,22 @@
                     } else if (key == 8 && this.inputBuffer.length > 0) { // Backspace
                         this.inputBuffer = this.inputBuffer.substr(0, this.inputBuffer.length - 1);
                     } else if (key == 13) {
+                        this.dialogue = false;
+                        this.agi_close_dialogue();
+
                         this.flags[2] = true; // The player has entered a command
                         this.keyboardCharBuffer = [];
                         break;
                     }
                 }
-            }
+            } 
+                    
             
             let egoDir: number = this.variables[6];
             if (this.dialogue) {
                 if (this.dialogueMode == 1) { // string input
                     this.strings[this.dialogueStrNo] = this.inputBuffer;
-                    this.screen.bltText(this.dialogueStrY, this.dialogueStrX, this.dialoguePrompt + this.strings[this.dialogueStrNo]);
+                    //this.screen.bltText(this.dialogueStrY, this.dialogueStrX, this.dialoguePrompt + this.strings[this.dialogueStrNo]);
                 }
             }
             this.keyboardCharBuffer = [];
@@ -220,6 +239,12 @@
             //this.bltText(23, 0, "V68 = " + this.variables[68]);
             //this.bltText(24, 0, this.strings[0] + this.inputBuffer);
             this.bltFrame();
+
+            // do sound
+            if(this.sound && this.sound.started == true && this.sound.ended == false){
+                this.sound.playCycle()
+            }
+
         }
 
         
@@ -527,9 +552,18 @@
             this.agi_muln(varNo1, this.variables[varNo2]);
         }
 
+        agi_div_n(varNo: number, val: number): void {
+            this.agi_divn(varNo, val)
+        }
+
         agi_divn(varNo: number, val: number): void {
             this.variables[this.variables[varNo]] /= val;
         }
+        
+        agi_div_v(varNo1: number, varNo2: number): void {
+            this.agi_divv(varNo1, varNo2)
+        }
+
         agi_divv(varNo1: number, varNo2: number): void {
             this.agi_divn(varNo1, this.variables[varNo2]);
         }
@@ -538,6 +572,10 @@
             console.log("NEW_ROOM " + roomNo);
             this.newroom = roomNo;
         }
+        agi_get_room_v(varNo: number) {
+
+        }
+        
         agi_new_room_v(varNo: number) {
             this.agi_new_room(this.variables[varNo]);
         }
@@ -756,6 +794,10 @@
             this.variables[varNo] = this.gameObjects[objNo].loop;
         }
 
+        agi_current_view(objNo: number, varNo: number) {
+            this.variables[varNo] = this.gameObjects[objNo].viewNo;
+        }
+
         agi_currentview(objNo: number, varNo: number) {
             this.variables[varNo] = this.gameObjects[objNo].viewNo;
         }
@@ -969,15 +1011,26 @@
         }
 
         agi_load_sound(soundNo: number) {
-
+            // console.log("load sound / not used")
         }
 
         agi_sound(soundNo: number, flagNo: number) {
+            if(this.sound) {
+                this.sound.stop()
+            }
 
+            this.sound = new Agi.Sound(soundNo, Resources.readAgiResource(Resources.AgiResource.Sound, soundNo));
+            this.sound.play(soundNo, flagNo)
         }
 
         agi_stop_sound() {
+            if(this.sound) {
+                this.sound.stop()
+            }
+        }
 
+        agi_reposition(objNo: number, x: number, y: number) {
+            this.agi_reposition_to(objNo, x, y)
         }
 
         agi_reposition_to(objNo: number, x: number, y: number) {
@@ -1063,14 +1116,16 @@
 
         agi_cancel_line() {
 
-        }
+        }// 
 
         agi_open_dialogue() {
             this.dialogue = true;
+            this.dialogueBox.open();
         }
 
         agi_close_dialogue() {
-            this.dialogue = false;
+            this.dialogueBox.close();
+
         }
 
         agi_get_string(strNo: number, msg: string, x: number, y: number, maxLen: number) {
@@ -1087,7 +1142,26 @@
         }
 
         agi_print(msgNo: number) {
-            alert(this.loadedLogics[this.logicNo].logic.messages[msgNo]);
+            // this is not the right way to do this but haven't figure out what the right way is
+            // where do thes get cleared out -- it should be in the main loop after the response.
+            this.flags[2] = false;
+            this.inputBuffer = ""
+            this.setEgoDir(0);
+            
+
+            var msg = this.loadedLogics[this.logicNo].logic.messages[msgNo]
+            msg = msg.replace("%s1", "Philbert") // need to get the users name and centralize string processing
+
+            this.allowInput = true;
+
+            if(this.dialogueBox.innerEl.innerHTML != msg) {
+                this.dialogueBox.open()
+                this.dialogueBox.setText(msg);    
+            }            
+        }
+
+        agi_print_at_v(varNo: number) {
+            this.agi_print(this.variables[varNo]);
         }
 
         agi_print_v(varNo: number) {
@@ -1162,8 +1236,53 @@
             return haveKey;
         }
 
-        agi_test_said(wordGroups: number[]) {
-            return false;
+        agi_test_said(wg0: number, wg1: number, wg2: number, wg3: number, wg4: number, 
+                      wg5: number, wg7: number, wg8: number, wg9: number) {
+            // agi_test_said(wordGroups: number[]) {
+            // these args should be passed in as an array but they are not
+            var wordGroups = [wg0, wg1, wg2, wg3, wg4, wg5, wg7, wg8, wg9];
+                wordGroups = wordGroups.filter(v => v !== undefined); 
+
+            var said = false;
+
+            if (this.flags[2] == true && this.inputBuffer != "") {
+                // The player has entered a command
+
+                // process input according to the spec
+                var input = this.inputBuffer
+                    // remove all punctuation
+                    input = input.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    input = input.replace(/\s{2,}/g," ");
+
+                    // lowercase every thing
+                    input = input.toLowerCase()
+
+                // break down the input into an array
+                var inputWords = input.split(" ");
+
+                // remove group 0 words
+                var fillerWords = Resources.words[0]
+                for(var fw=0; fw<fillerWords.length; fw++) {
+                    inputWords = inputWords.filter(v => v !== fillerWords[fw]); 
+                }
+
+                // evaluate the input
+                if(wordGroups.length <= inputWords.length) {
+                    for(var j=0; j<wordGroups.length; j++) {
+                        var words = Resources.words[wordGroups[j]];
+
+                        var inputWord = inputWords[j];
+                        if(words.includes(inputWord)) {
+                            if(j == (inputWords.length-1)) {
+                                said = true;
+                                break;
+                            }
+                        } 
+                    }
+                }
+            }
+
+            return said;
         }
 
         agi_test_compare_strings(strNo1: number, strNo2: number): boolean {
@@ -1184,10 +1303,18 @@
             }
         }
 
-        agi_object_on_water() {
-
+        agi_object_on_land() {
+            console.log("on land")
         }
 
+        agi_object_on_water() {
+            console.log("on water")
+        }
+
+        agi_undefined() {
+            // at some point remove this and figure out what is producing this instruction
+            // invalid index in opcodes?
+        }
         // ReSharper restore InconsistentNaming
     }
 } 
